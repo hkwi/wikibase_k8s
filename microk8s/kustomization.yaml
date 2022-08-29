@@ -1,0 +1,14 @@
+resources:
+  - ../base/mysql
+  - ../base/extra
+  - deploy.yaml
+
+secretGenerator:
+- name: wikibase-variables
+  behavior: merge
+  envs:
+  - secrets.env
+- name: mysql-variables
+  behavior: merge
+  envs:
+  - mysql_secrets.env

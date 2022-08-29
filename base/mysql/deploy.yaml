@@ -1,0 +1,57 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+spec:
+  selector:
+    app: mysql
+  ports:
+   - protocol: TCP
+     port: 3306
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mediawiki-mysql-data
+spec:
+#  volumeName: mediawiki-mysql-data
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql
+        envFrom:
+        - configMapRef:
+            name: mysql-variables
+        - secretRef:
+            name: mysql-variables
+        ports:
+        - containerPort: 3306
+        volumeMounts:
+        - name: mediawiki-mysql-data
+          mountPath: /var/lib/mysql
+      volumes:
+      - name: mediawiki-mysql-data
+        persistentVolumeClaim:
+          claimName: mediawiki-mysql-data

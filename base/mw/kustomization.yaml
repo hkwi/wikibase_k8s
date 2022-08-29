@@ -1,0 +1,13 @@
+resources:
+- deploy.yaml
+
+configMapGenerator:
+- name: wikibase-variables
+  envs:
+  - wikibase.env
+- name: jobrunner-entrypoint
+  files:
+  - entrypoint.sh=jobrunner-entrypoint.sh
+
+secretGenerator:
+- name: wikibase-variables

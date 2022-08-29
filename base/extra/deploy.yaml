@@ -1,0 +1,291 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+   - protocol: TCP
+     port: 9200
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: elasticsearch-data
+spec:
+#  volumeName: elasticsearch-data
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: elasticsearch-deployment
+  labels:
+    app: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: wikibase/elasticsearch:6.8.23-wmde.5
+        ports:
+        - containerPort: 9200
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: "-Xms512m -Xmx512m -Dlog4j2.formatMsgNoLookups=true"
+        volumeMounts:
+        - name: elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data
+      volumes:
+      - name: elasticsearch-data
+        persistentVolumeClaim:
+          claimName: elasticsearch-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wdqs-frontend
+spec:
+  selector:
+    app: wdqs-frontend
+  ports:
+   - protocol: TCP
+     port: 8834
+     targetPort: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wdqs-frontend-deployment
+  labels:
+    app: wdqs-frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wdqs-frontend
+  template:
+    metadata:
+      labels:
+        app: wdqs-frontend
+    spec:
+      containers:
+      - name: wdqs-frontend
+        image: wikibase/wdqs-frontend:wmde.5
+        ports:
+        - containerPort: 80
+        env:
+        - name: WIKIBASE_HOST
+          value: wikibase
+        - name: WDQS_HOST
+          value: wdqs-proxy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wdqs
+spec:
+  selector:
+    app: wdqs
+  ports:
+   - protocol: TCP
+     port: 9999
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: query-service-data
+spec:
+#  volumeName: query-service-data
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wdqs-deployment
+  labels:
+    app: wdqs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wdqs
+  template:
+    metadata:
+      labels:
+        app: wdqs
+    spec:
+      containers:
+      - name: wdqs
+        image: wikibase/wdqs:0.3.97-wmde.5
+        command:
+        - /runBlazegraph.sh
+        env:
+        - name: WIKIBASE_HOST
+          value: wikibase
+        - name: WDQS_HOST
+          value: wdqs
+        - name: WDQS_PORT
+          value: "9999"
+        ports:
+        - containerPort: 9999
+        volumeMounts:
+        - name: query-service-data
+          mountPath: /wdqs/data
+      volumes:
+      - name: query-service-data
+        persistentVolumeClaim:
+          claimName: query-service-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wdqs-proxy
+spec:
+  selector:
+    app: wdqs-proxy
+  ports:
+   - protocol: TCP
+     port: 80
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wdqs-proxy-deployment
+  labels:
+    app: wdqs-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wdqs-proxy
+  template:
+    metadata:
+      labels:
+        app: wdqs-proxy
+    spec:
+      containers:
+      - name: wdqs-proxy
+        image: wikibase/wdqs-proxy:wmde.5
+        ports:
+        - containerPort: 80
+        env:
+        - name: PROXY_PASS_HOST
+          value: "wdqs:9999"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wdqs-updater-deployment
+  labels:
+    app: wdqs-updater
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wdqs-updater
+  template:
+    metadata:
+      labels:
+        app: wdqs-updater
+    spec:
+      containers:
+      - name: wdqs-updater
+        image: wikibase/wdqs:0.3.97-wmde.5
+        command:
+        - /runUpdate.sh
+        env:
+        - name: WIKIBASE_HOST
+          value: wikibase
+        - name: WDQS_HOST
+          value: wdqs
+        - name: WDQS_PORT
+          value: "9999"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: quickstatements
+spec:
+  selector:
+    app: quickstatements
+  ports:
+   - protocol: TCP
+     port: 8840
+     targetPort: 80
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: quickstatements-data
+spec:
+#  volumeName: quickstatements-data
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quickstatements-deployment
+  labels:
+    app: quickstatements
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: quickstatements
+  template:
+    metadata:
+      labels:
+        app: quickstatements
+    spec:
+      containers:
+      - name: quickstatements
+        image: wikibase/quickstatements:wmde.5
+        env:
+        - name: QUICKSTATEMENTS_HOST
+        - name: QS_PUBLIC_SCHEME_HOST_AND_PORT
+        - name: WIKIBASE_SCHEME_AND_HOST
+          value: http://wikibase-docker
+        - name: WB_PUBLIC_SCHEME_HOST_AND_PORT
+          value: http://wikibase
+        - name: WB_PROPERTY_NAMESPACE
+          value: "122"
+        - name: WB_PROPERTY_PREFIX
+          value: "Property:"
+        - name: WB_ITEM_NAMESPACE
+          value: "120"
+        - name: WB_ITEM_PREFIX
+          value: "Item:"
+        ports:
+        - containerPort: 80
+        volumeMounts:
+        - name: quickstatements-data
+          mountPath: /quickstatements/data
+      volumes:
+      - name: quickstatements-data
+        persistentVolumeClaim:
+          claimName: quickstatements-data
+

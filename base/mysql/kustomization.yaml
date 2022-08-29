@@ -1,0 +1,10 @@
+resources:
+- deploy.yaml
+
+configMapGenerator:
+- name: mysql-variables
+  envs:
+  - mysql.env
+
+secretGenerator:
+- name: mysql-variables
