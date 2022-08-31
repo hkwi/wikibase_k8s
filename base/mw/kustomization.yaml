@@ -8,6 +8,9 @@ configMapGenerator:
 - name: jobrunner-entrypoint
   files:
   - entrypoint.sh=jobrunner-entrypoint.sh
+- name: jobrunner-variables
+  literals:
+  - MAX_JOBS=1
 
 secretGenerator:
 - name: wikibase-variables

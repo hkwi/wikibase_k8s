@@ -59,49 +59,30 @@ spec:
         volumeMounts:
         - name: wikibase-data
           mountPath: /var/www/html
+      - name: wikibase-job
+        image: wikibase/wikibase-bundle:1.36.3-wmde.5
+        command:
+          - /bin/bash
+        args:
+          - /entrypoint.sh
+        envFrom:
+        - configMapRef:
+            name: wikibase-variables
+        - configMapRef:
+            name: jobrunner-variables
+        - secretRef:
+            name: wikibase-variables
+        volumeMounts:
+        - name: wikibase-data
+          mountPath: /var/www/html
+          readOnly: true
+        - name: entrypoint
+          mountPath: /entrypoint.sh
+          subPath: entrypoint.sh
       volumes:
       - name: wikibase-data
         persistentVolumeClaim:
           claimName: wikibase-data
----
-apiVersion: batch/v1
-kind: CronJob
-metadata:
-  name: wikibase-cron
-spec:
-  schedule: "33 3 * * *"
-  jobTemplate:
-    spec:
-      template:
-        spec:
-          restartPolicy: Never
-          containers:
-          - name: wikibase-job
-            image: wikibase/wikibase-bundle:1.36.3-wmde.5
-            command:
-              - /bin/bash
-            args:
-              - /entrypoint.sh
-            env:
-            - name: MAX_JOBS
-              value: "1"
-            envFrom:
-            - configMapRef:
-                name: wikibase-variables
-            - secretRef:
-                name: wikibase-variables
-            volumeMounts:
-            - name: wikibase-data
-              mountPath: /var/www/html
-              readOnly: true
-            - name: entrypoint
-              mountPath: /entrypoint.sh
-              subPath: entrypoint.sh
-          volumes:
-          - name: wikibase-data
-            persistentVolumeClaim:
-              claimName: wikibase-data
-          - name: entrypoint
-            configMap:
-              name: jobrunner-entrypoint
-
+      - name: entrypoint
+        configMap:
+          name: jobrunner-entrypoint
