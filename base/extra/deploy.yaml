@@ -94,6 +94,8 @@ spec:
         ports:
         - containerPort: 80
         env:
+        # wdqs-frontend is an nginx instance,
+        # following vars are for proxy_pass dest.
         - name: WIKIBASE_HOST
           value: wikibase
         - name: WDQS_HOST
@@ -143,13 +145,9 @@ spec:
         image: wikibase/wdqs:0.3.97-wmde.5
         command:
         - /runBlazegraph.sh
-        env:
-        - name: WIKIBASE_HOST
-          value: wikibase
-        - name: WDQS_HOST
-          value: wdqs
-        - name: WDQS_PORT
-          value: "9999"
+        envFrom:
+        - configMapRef:
+            name: wdqs-variables
         ports:
         - containerPort: 9999
         volumeMounts:
@@ -193,6 +191,8 @@ spec:
         ports:
         - containerPort: 80
         env:
+        # wdqs-proxy is an nginx instance,
+        # following vars are for proxy_pass dest.
         - name: PROXY_PASS_HOST
           value: "wdqs:9999"
 ---
@@ -217,13 +217,9 @@ spec:
         image: wikibase/wdqs:0.3.97-wmde.5
         command:
         - /runUpdate.sh
-        env:
-        - name: WIKIBASE_HOST
-          value: wikibase
-        - name: WDQS_HOST
-          value: wdqs
-        - name: WDQS_PORT
-          value: "9999"
+        envFrom:
+        - configMapRef:
+            name: wdqs-variables
 ---
 apiVersion: v1
 kind: Service
@@ -244,7 +240,7 @@ metadata:
 spec:
 #  volumeName: quickstatements-data
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 2Gi
@@ -268,21 +264,9 @@ spec:
       containers:
       - name: quickstatements
         image: wikibase/quickstatements:wmde.5
-        env:
-        - name: QUICKSTATEMENTS_HOST
-        - name: QS_PUBLIC_SCHEME_HOST_AND_PORT
-        - name: WIKIBASE_SCHEME_AND_HOST
-          value: http://wikibase-docker
-        - name: WB_PUBLIC_SCHEME_HOST_AND_PORT
-          value: http://wikibase
-        - name: WB_PROPERTY_NAMESPACE
-          value: "122"
-        - name: WB_PROPERTY_PREFIX
-          value: "Property:"
-        - name: WB_ITEM_NAMESPACE
-          value: "120"
-        - name: WB_ITEM_PREFIX
-          value: "Item:"
+        envFrom:
+        - configMapRef:
+            name: quickstatements-variables
         ports:
         - containerPort: 80
         volumeMounts:

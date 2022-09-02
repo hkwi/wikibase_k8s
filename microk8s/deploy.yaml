@@ -5,6 +5,27 @@ metadata:
   name: wikibase
 spec:
   rules:
+  - host: wdqs.svc
+  	# edit /etc/hosts on the browser machine
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: wdqs-frontend
+            port:
+              number: 8834
+  - host: quickstatements.svc
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: quickstatements
+            port:
+              number: 8840
   - http:
       paths:
       - path: /
@@ -14,21 +35,3 @@ spec:
             name: wikibase
             port:
               number: 80
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: wdqs
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /$1
-spec:
-  rules:
-  - http:
-      paths:
-      - path: /q/(.*)
-        pathType: Prefix
-        backend:
-          service:
-            name: wdqs-frontend
-            port:
-              number: 8834

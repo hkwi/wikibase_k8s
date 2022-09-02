@@ -13,6 +13,12 @@ configMapGenerator:
 - name: extra-install
   files:
   - extra-install.sh
+- name: wdqs-variables
+  envs:
+  - wdqs.env
+- name: quickstatements-variables
+  envs:
+  - quickstatements.env
 
 patchesJson6902:
 - target:
@@ -23,13 +29,13 @@ patchesJson6902:
       path: /spec/template/spec/containers/0/volumeMounts/-
       value:
         name: quickstatements-data
-        mountPath: /quickstatements/
+        mountPath: /quickstatements/data
     - op: add
       path: /spec/template/spec/containers/0/volumeMounts/-
       value:
         name: extra-install
         mountPath: /extra-install.sh
-        subPath: entrypoint.sh
+        subPath: extra-install.sh
     - op: add
       path: /spec/template/spec/volumes/-
       value:

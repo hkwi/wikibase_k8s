@@ -17,7 +17,7 @@ metadata:
 spec:
 #  volumeName: wikibase-data
   accessModes:
-    - ReadWriteOnce
+    - ReadWriteMany
   resources:
     requests:
       storage: 2Gi
